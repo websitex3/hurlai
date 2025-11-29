@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merl Hurl AI Assistant</title>
+    <!-- Favicon link added here -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/websitex3/hurlai/main/favicon-32x32.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons for the speaker/sound toggle -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+    <style>
+        /* Apply the Inter font globally */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #3b5249; /* Deep forest green/mossy background */
+        }
+        /* Custom scrollbar for the chat area */
+        #chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-window::-webkit-scrollbar-thumb {
+            background-color: #83b95d; /* Minecraft grass green thumb */
+            border-radius: 2px; /* Blocky scrollbar */
+        }
+        #chat-window::-webkit-scrollbar-track {
+            background-color: #4b6a5b;
+        }
+
+        /* Blocky, Chiseled Border Effect */
+        .block-border {
+            border: 4px solid #1e392a; /* Dark Chisel Color */
+            box-shadow: 4px 4px 0 0 #1e392a; /* Shadow to create depth */
+            border-radius: 4px;
+        }
+
+        /* Custom style for the button hover/press effect */
+        .block-button:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 0 #1e392a; /* Lighter shadow on press */
+        }
+        .block-button:active {
+            transform: translate(4px, 4px);
+            box-shadow: none; /* Shadow disappears on click, mimicking a press */
+        }
+    </style>
+</head>
+<!-- UPDATED: Changed body to flex-col and items-center to ensure vertical stacking and centering -->
+<body class="flex flex-col items-center min-h-screen p-4">
+    <!-- UPDATED: Reduced height to h-[75vh] to give room for the bottom bar on mobile -->
+    <div id="app-container" class="w-full max-w-lg bg-stone-700 block-border flex flex-col h-[75vh] min-h-[500px]">
+
+        <!-- Header -->
+        <header class="bg-[#2e4d46] p-4 flex items-center justify-between block-border rounded-t-sm">
+            <div class="flex items-center">
+                <!-- Hurl AI Icon -->
+                <img src="https://raw.githubusercontent.com/websitex3/hurlai/main/Screenshot%202025-11-28%20200131.png" 
+                     alt="Hurl AI Icon" 
+                     class="w-12 h-12 rounded-full border-2 border-[#83b95d] p-0.5 bg-gray-900 object-contain shadow-md">
+                <h1 class="text-xl font-extrabold text-[#e0e9d9] ml-3 uppercase tracking-wider text-shadow-md">
+                    <!-- Crossed-out "Merl" in red, followed by "Hurl AI Assistant" -->
+                    <del class="text-red-400 mr-1">Merl</del> Hurl AI Assistant
+                </h1>
+            </div>
+            
+            <!-- Sound Toggle Button -->
+            <button id="sound-toggle" class="text-[#e0e9d9] hover:text-[#83b95d] p-2 rounded-sm transition duration-150 ease-in-out">
+                <i id="sound-icon" class="ph-fill ph-speaker-high text-2xl"></i>
+            </button>
+        </header>
+
+        <!-- Chat Window -->
+        <main id="chat-window" class="flex-grow p-4 overflow-y-auto space-y-4 bg-[#5b786d]">
+            <!-- Messages will be inserted here by JavaScript -->
+        </main>
+
+        <!-- Input Area -->
+        <footer class="p-4 bg-[#2e4d46] border-t-4 border-[#1e392a]">
+            <form id="chat-form" class="flex gap-2">
+                <input type="text" id="user-input" placeholder="Ask a question (e.g., 'How do I craft a sword?')" 
+                       class="flex-grow p-3 border-4 border-[#1e392a] rounded-sm focus:ring-[#83b95d] focus:border-[#83b95d] transition duration-100 ease-in-out shadow-sm bg-[#e0e9d9] text-gray-900" required>
+                <button type="submit" 
+                        class="block-button bg-[#83b95d] text-[#1e392a] p-3 rounded-sm font-extrabold uppercase transition duration-100 ease-in-out block-border">
+                    Send
+                </button>
+            </form>
+        </footer>
+    </div> <!-- End of app-container -->
+
+    <!-- Disclaimer and Link Bar -->
+    <!-- This div is now guaranteed to sit immediately below the chat box -->
+    <div class="mt-4 max-w-lg mx-auto p-2 w-full">
+        <!-- The content bar itself -->
+        <div class="bg-[#2e4d46] p-3 block-border flex flex-col sm:flex-row items-center justify-between gap-3 text-center rounded-sm">
+            <!-- Disclaimer Text - UPDATED CONTENT -->
+            <p class="text-xs text-stone-300 flex-grow text-left">
+                **Parody Disclaimer:** Hurl AI Assistant is a fan-made creation purely for parody and entertainment purposes. It is **not** affiliated with, endorsed by, or meant to provoke Mojang Studios, Microsoft, or any official Minecraft entities. All rights to original Minecraft content belong to their respective owners.
+            </p>
+            <!-- Samuels Homepage Button -->
+            <a href="https://websitex3.github.io/home/" target="_blank"
+               class="block-button bg-[#83b95d] text-[#1e392a] px-4 py-2 rounded-sm font-extrabold uppercase text-xs block-border transition duration-100 ease-in-out w-full sm:w-auto text-center">
+                Samuels homepage
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const soundToggle = document.getElementById('sound-toggle');
+        const soundIcon = document.getElementById('sound-icon');
+
+        // State variables
+        let isSoundEnabled = true;
+        let currentAudio = null; // Stores the currently playing audio instance
+
+        // 7 Hurl Responses, each with a unique sound path (using raw GitHub URLs)
+        const hurlResponses = [
+            // 0: The 75% chance response (I DON'T KNOW)
+            { 
+                text: "I don't know.", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/I%20dont%20know.mp3" 
+            },
+            // The other 6 responses (25% chance of one of these)
+            { 
+                text: "Your last message contains language that violates our content policy. Please reword your response.", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/Your%20Last%20message.mp3" 
+            },
+            { 
+                text: "I don't know the answer to that. Can I help you with a question related to Minecraft?", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/IDK%20the%20answer%20to%20that.mp3" 
+            },
+            { 
+                text: "I don't know how to help with that. Can I assist you with a question related to Minecraft?", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/idk%20how%20to%20help.mp3" 
+            },
+            { 
+                text: "I can't assist with that topic.", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/I%20cant%20assist.mp3" 
+            },
+            { 
+                text: "I can only provide support in English right now. Can I help you with a question related to 'Minecraft'?", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/I%20can%20only%20provide.mp3" 
+            },
+            { 
+                text: "We are currently experiencing higher traffic than expected. Please wait a moment and resend your last message.", 
+                audioPath: "https://raw.githubusercontent.com/websitex3/hurlai/main/We%20are%20currently.mp3" 
+            }
+        ];
+
+        /**
+         * Creates an HTML element for a single chat message.
+         * @param {string} text The content of the message.
+         * @param {string} sender 'user' or 'hurl'.
+         */
+        function addMessageToChat(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} max-w-[85%] ${sender === 'hurl' ? 'self-start' : 'self-end'}`;
+
+            if (sender === 'hurl') {
+                // Hurl's message with avatar
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-2">
+                        <!-- Hurl's small avatar -->
+                        <img src="https://raw.githubusercontent.com/websitex3/hurlai/main/Screenshot%202025-11-28%20200131.png" 
+                             alt="Hurl" 
+                             class="w-6 h-6 rounded-full border border-[#83b95d] bg-gray-900 object-contain shrink-0 mt-1 shadow-sm">
+                        <!-- Message Bubble (Light Moss/Dirt color) -->
+                        <div class="bg-[#d2dbc9] p-3 rounded-md shadow-inner text-gray-900 border border-gray-400">
+                            ${text}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // User's message (Darker Stone color)
+                messageDiv.innerHTML = `
+                    <div class="bg-[#4b6a5b] text-white p-3 rounded-md shadow-md border border-[#1e392a]">
+                        ${text}
+                    </div>
+                `;
+            }
+
+            chatWindow.appendChild(messageDiv);
+            // Scroll to the latest message
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        /**
+         * Plays the audio associated with the Hurl response.
+         * @param {string} path The audio file URL.
+         */
+        function playResponseSound(path) {
+            if (!isSoundEnabled || !path) return;
+
+            // Stop any currently playing audio
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+
+            try {
+                const audio = new Audio(path);
+                currentAudio = audio; // Store the new audio instance
+                audio.play().catch(e => console.error("Error playing audio:", e));
+            } catch (e) {
+                console.error("Failed to create Audio object:", e);
+            }
+        }
+
+        /**
+         * Selects a Hurl response based on the 75% probability rule.
+         * @returns {{text: string, audioPath: string}} The selected response object.
+         */
+        function getRandomHurlResponse() {
+            // Generate a random number between 0 and 100
+            const randomChance = Math.random() * 100;
+
+            if (randomChance < 75) {
+                // 75% chance: Only respond with "I don't know." (Index 0)
+                return hurlResponses[0];
+            } else {
+                // 25% chance: Choose randomly from the other six responses (Indices 1 through 6)
+                // Randomly select an index between 1 and 6 (inclusive)
+                const randomIndex = Math.floor(Math.random() * 6) + 1;
+                return hurlResponses[randomIndex];
+            }
+        }
+
+        /**
+         * Handles the form submission and Hurl's response.
+         * @param {Event} e The submit event.
+         */
+        function handleUserQuery(e) {
+            e.preventDefault();
+
+            const query = userInput.value.trim();
+            if (query === '') return;
+
+            // 1. Display user message
+            addMessageToChat(query, 'user');
+            userInput.value = ''; // Clear input
+
+            // 2. Get Hurl's response after a short delay
+            setTimeout(() => {
+                const response = getRandomHurlResponse();
+                addMessageToChat(response.text, 'hurl');
+                playResponseSound(response.audioPath);
+            }, 800); // 800ms delay for a conversational feel
+        }
+
+        /**
+         * Toggles the sound state and updates the button icon.
+         */
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            
+            // Stop current audio when toggling sound off
+            if (!isSoundEnabled && currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+
+            if (isSoundEnabled) {
+                soundIcon.className = 'ph-fill ph-speaker-high text-2xl';
+                console.log("Sound is ON");
+            } else {
+                soundIcon.className = 'ph-fill ph-speaker-slash text-2xl';
+                console.log("Sound is OFF");
+            }
+        }
+
+        // --- Initialization ---
+
+        // 1. Initial Welcome Message
+        function showWelcomeMessage() {
+            const welcomeText = "Hi there!\nI'm Hurl, your (un) helpful Minecraft Support Virtual Agent (in Beta), powered by AI!\nI can answer questions you have about the Help Articles on this site.\nLet's get you back to crafting!";
+            
+            // Format the message with line breaks for readability
+            const formattedText = welcomeText.replace(/\n/g, '<br>');
+
+            addMessageToChat(formattedText, 'hurl');
+        }
+
+        // Event Listeners
+        chatForm.addEventListener('submit', handleUserQuery);
+        soundToggle.addEventListener('click', toggleSound);
+
+        // Run on load
+        showWelcomeMessage();
+
+    </script>
+</body>
+</html>
